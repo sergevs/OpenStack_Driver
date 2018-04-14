@@ -66,6 +66,7 @@ class HuaweiConf(object):
         set_attr_funcs = (self._san_address,
                           self._san_user,
                           self._san_password,
+                          self._san_scope,
                           self._san_product,
                           self._san_protocol,
                           self._lun_type,
@@ -126,6 +127,17 @@ class HuaweiConf(object):
 
         user = base64.b64decode(text[4:])
         setattr(self.conf, 'san_user', user)
+
+    def _san_scope(self, xml_root):
+        scope = "0"
+        text = xml_root.findtext('Storage/Scope')
+        if text:
+          if text not in ("0","1","2"):
+            msg = _("Invalid Scope, only 0, 1, 2 is allowed.")
+            LOG.error(msg)
+            raise exception.InvalidInput(reason=msg)
+          scope = text
+        setattr(self.conf, 'san_scope', scope)
 
     def _san_password(self, xml_root):
         text = xml_root.findtext('Storage/UserPassword')
@@ -442,6 +454,7 @@ class HuaweiConf(object):
             'san_address': self.conf.san_address,
             'san_user': self.conf.san_user,
             'san_password': self.conf.san_password,
+            'san_scope': self.conf.san_scope,
             'storage_pools': self.conf.storage_pools,
             'iscsi_info': self.conf.iscsi_info,
             'fc_info': self.conf.fc_info,

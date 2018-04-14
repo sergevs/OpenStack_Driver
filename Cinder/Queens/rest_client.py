@@ -44,12 +44,13 @@ class HostNameIgnoringAdapter(HTTPAdapter):
 class RestClient(object):
     """Common class for Huawei OceanStor storage system."""
 
-    def __init__(self, configuration, san_address, san_user, san_password,
+    def __init__(self, configuration, san_address, san_user, san_password, san_scope,
                  **kwargs):
         self.configuration = configuration
         self.san_address = san_address
         self.san_user = san_user
         self.san_password = san_password
+        self.san_scope = san_scope
         self.storage_pools = kwargs.get('storage_pools',
                                         self.configuration.storage_pools)
         self.iscsi_info = kwargs.get('iscsi_info',
@@ -152,7 +153,7 @@ class RestClient(object):
             url = item_url + "xx/sessions"
             data = {"username": self.san_user,
                     "password": self.san_password,
-                    "scope": "0"}
+                    "scope": self.san_scope}
             self.init_http_head()
             self.session.mount(item_url.lower(), HostNameIgnoringAdapter())
             result = self.do_call(url, data,
