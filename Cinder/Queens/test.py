@@ -10,14 +10,13 @@ from cinder import context
 
 from cinder.volume.drivers.huawei.huawei_driver import HuaweiFCDriver
 
-
 def dump(obj):
   for attr in dir(obj):
     print("obj.%s = %r" % (attr, getattr(obj, attr)))
 
 c=configuration.DefaultGroupConfiguration()
 d = HuaweiFCDriver(configuration=c)
-#ctx=context.RequestContext()
-#dump(d.configuration)
 
 d.do_setup(None)
+
+# Here you can write your tests
