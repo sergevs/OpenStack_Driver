@@ -485,12 +485,11 @@ class RestClient(object):
 
     def add_host_to_hostgroup(self, host_id):
         """Associate host to hostgroup.
-
         If hostgroup doesn't exist, create one.
         """
         hostgroup_name = constants.HOSTGROUP_PREFIX + host_id
         hostgroup_id = self.create_hostgroup_with_check(hostgroup_name)
-        is_associated = self._is_host_associate_to_hostgroup(hostgroup_id,
+        is_associated = self._is_host_associated_to_hostgroup(hostgroup_id,
                                                              host_id)
         if not is_associated:
             self._associate_host_to_hostgroup(hostgroup_id, host_id)
@@ -789,7 +788,7 @@ class RestClient(object):
         if 'data' in result:
             return result['data']['ID']
 
-    def _is_host_associate_to_hostgroup(self, hostgroup_id, host_id):
+    def _is_host_associated_to_hostgroup(self, hostgroup_id, host_id):
         """Check whether the host is associated to the hostgroup."""
         url = ("/host/associate?TYPE=21&"
                "ASSOCIATEOBJTYPE=14&ASSOCIATEOBJID=%s" % hostgroup_id)
@@ -2413,6 +2412,36 @@ class RestClient(object):
 
         msg = _('Set pair secondary access error.')
         self._assert_rest_result(result, msg)
+
+    def get_hostgroup_by_host(self, host_id):
+        url = "/hostgroup/associate?ASSOCIATEOBJTYPE=21&ASSOCIATEOBJID=%s" % host_id
+        result = self.call(url, None, "GET")
+        if result['error']['code'] != 0:
+          return -1
+        data = result.get('data')
+        if data.count == 0:
+          return -1
+        return data[0].get('ID')
+
+    def get_mappingview_by_hostgroup(self, hostgroup_id):
+        url = "/mappingview/associate?ASSOCIATEOBJTYPE=14&ASSOCIATEOBJID=%s" % hostgroup_id
+        result = self.call(url, None, "GET")
+        if result['error']['code'] != 0:
+          return -1
+        data = result.get('data')
+        if data.count == 0:
+          return -1
+        return data[0].get('ID')
+
+    def get_lungroup_by_mappingview(self, mappingview_id):
+        url = "/lungroup/associate?ASSOCIATEOBJTYPE=245&ASSOCIATEOBJID=%s" % mappingview_id
+        result = self.call(url, None, "GET")
+        if result['error']['code'] != 0:
+          return -1
+        data = result.get('data')
+        if data.count == 0:
+          return -1
+        return data[0].get('ID')
 
     def is_host_associated_to_hostgroup(self, host_id):
         url = "/host/" + host_id

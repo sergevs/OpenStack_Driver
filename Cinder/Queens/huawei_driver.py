@@ -128,7 +128,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
             return self.loc_dev_conf, self.replica_dev_conf
 
     def do_setup(self, context):
-        """Instantiate common class and login storage system."""
+        """Cinder VolumeDriverCore: Any initialization the volume driver needs to do while starting."""
         # Set huawei private configuration into Configuration object.
         self.huawei_conf.update_config_value()
 
@@ -166,10 +166,11 @@ class HuaweiBaseDriver(driver.VolumeDriver):
                                                           self.configuration)
 
     def check_for_setup_error(self):
+        """Cinder VolumeDriverCore: Validate there are no issues with the driver configuration."""
         pass
 
     def get_volume_stats(self, refresh=False):
-        """Get volume status and reload huawei config file."""
+        """Cinder VolumeDriverCore: Collects volume backend stats and reload huawei config file."""
         self.huawei_conf.update_config_value()
         stats = self.client.update_volume_stats()
         stats = self.update_support_capability(stats)
@@ -430,7 +431,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
         return model_update
 
     def create_volume(self, volume):
-        """Create a volume."""
+        """Cinder VolumeDriverCore: Create a new volume on the backend."""
         volume_type = self._get_volume_type(volume)
         opts = self._get_volume_params(volume_type)
         if (opts.get('hypermetro') == 'true'
@@ -463,7 +464,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
         self.client.delete_lun(lun_id)
 
     def delete_volume(self, volume):
-        """Delete a volume.
+        """Cinder VolumeDriverCore: Delete a volume from the backend.
 
         Three steps:
         Firstly, remove associate from lungroup.
@@ -727,7 +728,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
         return moved, {}
 
     def create_volume_from_snapshot(self, volume, snapshot):
-        """Create a volume from a snapshot.
+        """Cinder VolumeDriverCore: Creates a volume from a snapshot.
 
         We use LUNcopy to copy a new volume from snapshot.
         The time needed increases as volume size does.
@@ -909,7 +910,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
                 self.client.sync_pair(pair_id)
 
     def extend_volume(self, volume, new_size):
-        """Extend a volume."""
+        """Cinder VolumeDriverCore: Extend the size of a volume."""
         lun_id = self._check_volume_exist_on_array(
             volume, constants.VOLUME_NOT_EXISTS_RAISE)
         lun_info = self.client.get_lun_info(lun_id)
@@ -983,6 +984,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
         return snapshot_id
 
     def create_snapshot(self, snapshot):
+        """Cinder VolumeDriverCore: Creates a snapshot."""
         snapshot_id = self._create_snapshot_base(snapshot)
         try:
             self.client.activate_snapshot(snapshot_id)
@@ -999,6 +1001,7 @@ class HuaweiBaseDriver(driver.VolumeDriver):
         return {'provider_location': location}
 
     def delete_snapshot(self, snapshot):
+        """Cinder VolumeDriverCore: Deletes a snapshot."""
         snapshot_id = self._check_snapshot_exist_on_array(
             snapshot, constants.SNAPSHOT_NOT_EXISTS_WARN)
         if not snapshot_id:
@@ -2339,7 +2342,7 @@ class HuaweiISCSIDriver(HuaweiBaseDriver, driver.ISCSIDriver):
 
     @coordination.synchronized('huawei-mapping-{connector[host]}')
     def initialize_connection(self, volume, connector):
-        """Map a volume to a host and return target iSCSI information."""
+        """Cinder VolumeDriverCore: Allow connection to connector and return connection info."""
         # Attach local lun.
         iscsi_info = self._initialize_connection(volume, connector)
 
@@ -2615,7 +2618,7 @@ class HuaweiFCDriver(HuaweiBaseDriver, driver.FibreChannelDriver):
         self.fcsan = None
 
     def get_volume_stats(self, refresh=False):
-        """Get volume status."""
+        """Cinder VolumeDriverCore: Get volume status."""
         data = HuaweiBaseDriver.get_volume_stats(self, refresh=False)
         backend_name = self.configuration.safe_get('volume_backend_name')
         data['volume_backend_name'] = backend_name or self.__class__.__name__
@@ -2627,6 +2630,7 @@ class HuaweiFCDriver(HuaweiBaseDriver, driver.FibreChannelDriver):
     @fczm_utils.add_fc_zone
     @coordination.synchronized('huawei-mapping-{connector[host]}')
     def initialize_connection(self, volume, connector):
+        """Cinder VolumeDriverCore: Allow connection to connector and return connection info."""
         lun_id, lun_type = self.get_lun_id_and_type(
             volume, constants.VOLUME_NOT_EXISTS_RAISE)
         lun_info = self.client.get_lun_info(lun_id, lun_type)
@@ -2641,6 +2645,7 @@ class HuaweiFCDriver(HuaweiBaseDriver, driver.FibreChannelDriver):
              'lun_type': lun_type})
 
         portg_id = None
+        # Add host.
         host_id = self.client.add_host_with_check(connector['host'])
 
         if not self.fcsan:
@@ -2747,7 +2752,7 @@ class HuaweiFCDriver(HuaweiBaseDriver, driver.FibreChannelDriver):
     @fczm_utils.remove_fc_zone
     @coordination.synchronized('huawei-mapping-{connector[host]}')
     def terminate_connection(self, volume, connector, **kwargs):
-        """Delete map between a volume and a host."""
+        """Cinder VolumeDriverCore: Remove access to a volume."""
         lun_id, lun_type = self.get_lun_id_and_type(
             volume, constants.VOLUME_NOT_EXISTS_WARN)
 
