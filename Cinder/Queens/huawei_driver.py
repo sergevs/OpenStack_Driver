@@ -2793,37 +2793,6 @@ class HuaweiFCDriver(HuaweiBaseDriver, driver.FibreChannelDriver):
         else:
             fc_info, portg_id = self._delete_zone_and_remove_fc_initiators(
                 wwns, host_id)
-            if lungroup_id:
-                if view_id and self.client.lungroup_associated(
-                        view_id, lungroup_id):
-                    self.client.delete_lungroup_mapping_view(view_id,
-                                                             lungroup_id)
-                self.client.delete_lungroup(lungroup_id)
-            if portg_id:
-                if view_id and self.client.is_portgroup_associated_to_view(
-                        view_id, portg_id):
-                    self.client.delete_portgroup_mapping_view(view_id,
-                                                              portg_id)
-                    self.client.delete_portgroup(portg_id)
-
-            if host_id:
-                hostgroup_name = constants.HOSTGROUP_PREFIX + host_id
-                hostgroup_id = self.client.find_hostgroup(hostgroup_name)
-                if hostgroup_id:
-                    if view_id and self.client.hostgroup_associated(
-                            view_id, hostgroup_id):
-                        self.client.delete_hostgoup_mapping_view(
-                            view_id, hostgroup_id)
-                    self.client.remove_host_from_hostgroup(
-                        hostgroup_id, host_id)
-                    self.client.delete_hostgroup(hostgroup_id)
-
-                if not self.client.check_fc_initiators_exist_in_host(
-                        host_id):
-                    self.client.remove_host(host_id)
-
-            if view_id:
-                self.client.delete_mapping_view(view_id)
 
         # Deal with hypermetro connection.
         metadata = huawei_utils.get_lun_metadata(volume)
@@ -2853,13 +2822,6 @@ class HuaweiFCDriver(HuaweiBaseDriver, driver.FibreChannelDriver):
         else:
             (tgt_port_wwns, init_targ_map) = (
                 self.client.get_init_targ_map(wwns))
-
-        # Remove the initiators from host if need.
-        if host_id:
-            fc_initiators = self.client.get_host_fc_initiators(host_id)
-            for wwn in wwns:
-                if wwn in fc_initiators:
-                    self.client.remove_fc_from_host(wwn)
 
         info = {'driver_volume_type': 'fibre_channel',
                 'data': {'target_wwn': tgt_port_wwns,
